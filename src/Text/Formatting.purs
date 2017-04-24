@@ -1,90 +1,93 @@
 module Text.Formatting where
 
-import Data.Semigroup (class Semigroup)
-import Data.Show (class Show)
 import Data.Show as Data.Show
-import Prelude (id, ($), (<<<), (<>), (>>>))
+import Data.Bifunctor (class Bifunctor, lmap, rmap)
+import Data.Semigroup ((<>))
+import Data.Show (class Show)
+import Prelude (class Semigroup, id, ($), (<<<), (>>>))
+
 
 ------------------------------------------------------------
 -- Core library.
 ------------------------------------------------------------
 
-data FormatT m r a
-    = FormatT ((m -> r) -> a)
+-- | A `String` formatter, like `printf`, but type-safe and composable.
+-- |
+-- | In general, a function that behaves like `printf "%s: %d"` would
+-- | will have the type signature `Format r m (String -> Int -> a)`. In
+-- | other words, `r` and `a` are always type variables, and as you build
+-- | your formatter the concrete arguments queue up in front of `a`.
+-- |
+-- | [See the docs for `Format`](#Format) for a technical explanation.
 
-type Format = FormatT String
+data Format result m f
+    = Format ((m -> result) -> f)
 
--- TODO Is this a semigroupoid, or is it merely semigroupoid-oid?
---compose :: forall a b c. Format b a -> Format c b -> Format c a
 compose ::
-  forall t33 t36 t38 t40.
-  (Semigroup t40) =>
-  FormatT t40 t33 t38
-           -> FormatT t40 t36 t33
-           -> FormatT t40 t36 t38
-compose (FormatT f) (FormatT g) =
-    FormatT (\callback -> f $ \strF -> g $ \strG -> callback $ strF <> strG)
+  forall r s f m.
+  (Semigroup m) =>
+  Format r m f
+  -> Format s m r
+  -> Format s m f
+compose (Format f) (Format g) =
+    Format (\callback -> f $ \fValue -> g $ \gValue -> callback $ fValue <> gValue)
+
+instance formatBifunctor :: Bifunctor (Format r) where
+  bimap inputF outputF (Format format) =
+    Format (\callback -> outputF (format (inputF >>> callback)))
 
 infix 9 compose as %
 
-apply ::
-  forall a r b m.
-  FormatT m r (a -> b)
-  -> a
-  -> FormatT m r b
-apply (FormatT format) value =
-    FormatT (\callback -> format callback value)
+identity :: forall m r. Format r m (m -> r)
+identity = Format id
 
-print :: forall r a. FormatT r r a -> a
-print (FormatT format) = format id
+apply :: forall a r b m. Format r m (a -> b) -> a -> Format r m b
+apply (Format format) value =
+  Format (\callback -> format callback value)
 
--- TODO I have a suspicion that there's some known category out there
--- that `before` (and possibly `after`) belong to. `before` smells a bit
--- like a contravariant functor... 🤔
+print :: forall f r. Format r r f -> f
+print (Format format) = format id
+
 before ::
-  forall m r a b c.
+  forall r m c b a.
   (a -> b)
-  -> FormatT m r (b -> c)
-  -> FormatT m r (a -> c)
-before f (FormatT format) =
-    FormatT (\callback -> f >>> format callback)
+  -> Format r m (b -> c)
+  -> Format r m (a -> c)
+before f (Format format) =
+  Format (\callback -> (format callback <<< f))
 
 after ::
-  forall r a n m.
-  (m -> n)
-  -> FormatT m r a
-  -> FormatT n r a
-after f (FormatT format) =
-    FormatT (\callback -> format $ callback <<< f)
+  forall r f a b.
+  (a -> b)
+  -> Format r a f
+  -> Format r b f
+after = lmap
 
-toFormatter ::
-  forall r m a.
-  (a -> m)
-  -> FormatT m r (a -> r)
+que :: forall r a b c. (b -> c) -> Format r a b -> Format r a c
+que = rmap
+
+toFormatter :: forall r m a. (a -> m) -> Format r m (a -> r)
 toFormatter f =
-    FormatT (\callback -> callback <<< f)
+  Format (\callback -> callback <<< f)
 
 ------------------------------------------------------------
 -- Formatters.
 ------------------------------------------------------------
 
-show :: forall r a. Show a => Format r (a -> r)
-show = FormatT (\callback -> callback <<< Data.Show.show)
+show :: forall r a. (Show a) => Format r String (a -> r)
+show = Format (\callback value -> callback $ Data.Show.show value)
 
-identity :: forall m r. FormatT m r (m -> r)
-identity = FormatT id
+string :: forall r. Format r String (String -> r)
+string = Format (\callback str -> callback str)
 
-string :: forall r. Format r (String -> r)
-string = identity
-
-int :: forall r. Format r (Int -> r)
+int :: forall r. Format r String (Int -> r)
 int = show
 
-number :: forall r. Format r (Number -> r)
+number :: forall r. Format r String (Number -> r)
 number = show
 
-boolean :: forall r. Format r (Boolean -> r)
+boolean :: forall r. Format r String (Boolean -> r)
 boolean = show
 
-s :: forall r m. m -> FormatT m r r
-s str = FormatT (\callback -> callback str)
+s :: forall r. String -> Format r String r
+s str = Format (\callback -> callback str )

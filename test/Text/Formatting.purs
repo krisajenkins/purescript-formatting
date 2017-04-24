@@ -1,14 +1,13 @@
 module Test.Text.Formatting (tests) where
 
-import Text.Formatting as F
 import Data.Array (length)
 import Data.Maybe (Maybe(..))
-import Data.Show (class Show)
 import Data.String (toUpper)
-import Prelude (bind, show, (<>), (>>>))
+import Prelude
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert (equal)
 import Text.Formatting (print, s, string, (%))
+import Text.Formatting as F
 
 tests :: forall e. TestSuite e
 tests = do
