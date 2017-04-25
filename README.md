@@ -10,7 +10,6 @@ language-level support.
 
 It also composes well, making it easy to build up complex, reusable formatters.
 
-
 ## Credits
 
 This package is a port of [Chris Done's Formatting][formatting] library for
@@ -20,7 +19,7 @@ Haskell.
 
 ## See Also
 
-A port of this library is also (available for Elm)[http://package.elm-lang.org/packages/krisajenkins/formatting/latest].
+A port of this library is also [available for Elm](http://package.elm-lang.org/packages/krisajenkins/formatting/latest).
 
 ## License
 
