@@ -41,7 +41,11 @@ infix 9 compose as %
 identity :: forall m r. Format r m (m -> r)
 identity = Format id
 
-apply :: forall a r b m. Format r m (a -> b) -> a -> Format r m b
+apply ::
+  forall a r b m.
+  Format r m (a -> b)
+  -> a
+  -> Format r m b
 apply (Format format) value =
   Format (\callback -> format callback value)
 
