@@ -21,6 +21,17 @@ Haskell.
 
 [formatting]: http://chrisdone.com/posts/formatting
 
+## Contributing
+
+More specialised formatters (like "print to a certain number of
+decimal places") would be welcome.
+
+For more advanced help, I have a suspicion that `before` and `after`
+have a proper home in some category somewhere, and I'd like to find
+out where it is. Also, I suspect we can relax the composition
+restraint from `Format String` to `forall m. Semigroupoid m => Format m`.
+If you know how, I'd love your input.
+
 ## See Also
 
 A port of this library is also [available for Elm](http://package.elm-lang.org/packages/krisajenkins/formatting/latest).
