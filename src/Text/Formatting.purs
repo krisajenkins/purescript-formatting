@@ -12,47 +12,63 @@ import Data.Show (class Show)
 
 -- | A `String` formatter, like `printf`, but type-safe and composable.
 -- |
--- | In general, a function that behaves like `printf "%s: %d"` would
+-- | As an example, a function that behaves like `printf "%s: %d"` would
 -- | will have the type signature `Format String r (String -> Int -> r)`. In
--- | other words, `r` and `a` are always type variables, and as you build
--- | your formatter the concrete arguments queue up in front of `a`.
+-- | you build up a function that eventually yields a `r`. That
+-- | remains a variable, because you might want to to append other
+-- | arguments, but the first part - `Format String` tells you that
+-- | when this formatter finally gets used, it must eventually yield a
+-- | string.
 -- |
--- | Examples:
-
+-- | ## Examples:
+-- |
 -- | ``` purescript
 -- | import Text.Formatting (print, s, string)
+-- | ```
 -- |
--- | -- Build up a `Format`, composing with `<<<`.
+-- | Build up a `Format`, composing with `<<<`.
+-- | ``` purescript
 -- | greeting :: Format String (String -> String)
 -- | greeting = s "Hello " <<< string <<< s "!"
+-- | ```
 -- |
--- | -- Convert it to a function with `print`:
+-- | Convert it to a function with `print`:
+-- | ``` purescript
 -- | greet :: String -> String
 -- | greet = print greeting
+-- | ```
 -- |
--- | -- Then use it:
+-- | Then use it:
+-- | ``` purescript
 -- | message1 :: String
 -- | message1 = greet "Kris"
 -- | --> message1 == "Hello Kris!"
+-- | ```
 -- |
--- | -- Or more often, use it directly:
+-- | Or more often, use it directly:
+-- | ``` purescript
 -- | message2 :: String
 -- | message2 = print greeting "Kris"
 -- | --> message2 == "Hello Kris!"
+-- | ```
 -- |
--- | -- Extend it just by composing more onto it:
+-- | Extend it just by composing more onto it:
+-- | ``` purescript
 -- | inbox :: forall r. Format String r (String -> Int -> r)
 -- | inbox = greeting <<< s " You have " <<< F.int <<< s " new messages."
+-- | ```
 -- |
--- | -- `print` still makes it into function:
+-- | `print` still makes it into function:
+-- | ``` purescript
 -- | welcome :: String -> Int -> String
 -- | welcome = print inbox
+-- | ```
 -- |
--- | -- Or again, call it in one go:
+-- | Or again, call it in one go:
+-- | ``` purescript
 -- | message3 :: String
 -- | message3 = print inbox "Kris" 3
 -- | --> message3 == "Hello Kris! You have 3 new messages."
--- |
 -- | ```
 
 data Format monoid result f
@@ -82,7 +98,8 @@ instance formatSemigroupoid :: Semigroupoid (Format String) where
   compose = composeFormat
 
 -- | Turns a `Format` into the underlying function it has built up.
--- | Call this when you're ready to apply all the arguments and generate a `String`.
+-- | Call this when you're ready to apply all the arguments and
+-- | generate an `r` (usually a `String`).
 print :: forall f r. Format r r f -> f
 print (Format format) = format id
 
@@ -103,6 +120,13 @@ toFormatter f =
 
 -- | Modify a `Format` so that this (contravariant) function is called
 -- | on its first argument.
+-- |
+-- | ## Example:
+-- | ``` purescript
+-- | import Text.Formatting as F
+-- | print (F.before length F.int) [1, 2, 3]
+-- | --> "3"
+-- | ```
 before ::
   forall r m a b c.
   (b -> a)
@@ -112,6 +136,12 @@ before f (Format format) =
   Format (\callback -> format callback <<< f)
 
 -- | Modify a `Format` so that this function is called on its final result.
+-- | ## Example:
+-- | ``` purescript
+-- | import Text.Formatting as F
+-- | print (F.after toUpper show) (Just 3)
+-- | --> "(JUST 3)"
+-- | ```
 after :: forall r m n f. (m -> n) -> Format m r f -> Format n r f
 after f (Format format) =
   Format (\callback -> format (callback <<< f))
