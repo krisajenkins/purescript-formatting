@@ -131,10 +131,10 @@ toFormatter f =
 -- | --> "3"
 -- | ```
 before ::
-  forall r m a b c.
+  forall r m a b f.
   (b -> a)
-  -> Format m r (a -> c)
-  -> Format m r (b -> c)
+  -> Format m r (a -> f)
+  -> Format m r (b -> f)
 before f (Format format) =
   Format (\callback -> format callback <<< f)
 
