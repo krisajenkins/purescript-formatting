@@ -15,7 +15,7 @@ import Data.Show (class Show)
 -- | As an example, a function that behaves like `printf "%s: %d"` would
 -- | will have the type signature `Format String r (String -> Int -> r)`.
 -- |
--- | So you build up a function that eventually yields a `r`. That `r`
+-- | So you build up a function that eventually yields an `r`. That `r`
 -- | remains a variable, because you might want to to append other
 -- | arguments, but the first part - `Format String` tells you that
 -- | when this formatter finally gets used, the whole thing must
