@@ -13,12 +13,13 @@ import Data.Show (class Show)
 -- | A `String` formatter, like `printf`, but type-safe and composable.
 -- |
 -- | As an example, a function that behaves like `printf "%s: %d"` would
--- | will have the type signature `Format String r (String -> Int -> r)`. In
--- | you build up a function that eventually yields a `r`. That
+-- | will have the type signature `Format String r (String -> Int -> r)`.
+-- |
+-- | So you build up a function that eventually yields a `r`. That `r`
 -- | remains a variable, because you might want to to append other
 -- | arguments, but the first part - `Format String` tells you that
--- | when this formatter finally gets used, it must eventually yield a
--- | string.
+-- | when this formatter finally gets used, the whole thing must
+-- | eventually yield a `String`.
 -- |
 -- | ## Examples:
 -- |
@@ -52,13 +53,15 @@ import Data.Show (class Show)
 -- | --> message2 == "Hello Kris!"
 -- | ```
 -- |
--- | Extend it just by composing more onto it:
+-- | What really sets this approach apart from string interpolation,
+-- | apart from the type-safety, is that we can freely compose
+-- | `Format`s. Let's extend `greeting` with some more arguments:
 -- | ``` purescript
 -- | inbox :: forall r. Format String r (String -> Int -> r)
 -- | inbox = greeting <<< s " You have " <<< F.int <<< s " new messages."
 -- | ```
 -- |
--- | `print` still makes it into function:
+-- | `print` still makes it into a function:
 -- | ``` purescript
 -- | welcome :: String -> Int -> String
 -- | welcome = print inbox
