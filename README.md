@@ -10,6 +10,10 @@ language-level support.
 
 It also composes well, making it easy to build up complex, reusable formatters.
 
+## Documentation
+
+Module documentation is published on Pursuit: [http://pursuit.purescript.org/packages/purescript-formatting](http://pursuit.purescript.org/packages/purescript-formatting)
+
 ## Credits
 
 This package is a port of [Chris Done's Formatting][formatting] library for
