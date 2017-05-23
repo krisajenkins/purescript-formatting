@@ -1,6 +1,7 @@
 {
     "name": "purescript-formatting",
     "version": "1.0.0",
+    "license": "MIT",
     "description": "Type-safe replacement to printf, modelled after Chris Done's Haskell library.",
     "main": "index.js",
     "directories": {
@@ -21,7 +22,6 @@
         "url": "git+https://github.com/krisajenkins/purescript-formatting.git"
     },
     "author": "",
-    "license": "MIT",
     "bugs": {
         "url": "https://github.com/krisajenkins/purescript-formatting/issues"
     },

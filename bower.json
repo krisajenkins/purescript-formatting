@@ -1,15 +1,20 @@
 {
-  "name": "purescript-formatting",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "output"
-  ],
-  "dependencies": {
-    "purescript-prelude": "^3.0.0"
-  },
-  "devDependencies": {
-    "purescript-test-unit": "^11.0.0"
-  }
+    "name": "purescript-formatting",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/krisajenkins/purescript-formatting.git"
+    },
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "output"
+    ],
+    "dependencies": {
+        "purescript-prelude": "^3.0.0"
+    },
+    "devDependencies": {
+        "purescript-test-unit": "^11.0.0"
+    }
 }
