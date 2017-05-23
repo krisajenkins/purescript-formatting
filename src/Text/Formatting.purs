@@ -1,11 +1,10 @@
 module Text.Formatting where
 
 import Data.Show as Data.Show
-import Data.Bifunctor (class Bifunctor, lmap, rmap)
-import Data.Semigroup ((<>))
+import Control.Semigroupoid (class Semigroupoid)
+import Data.Function (id, ($), (<<<))
+import Data.Semigroup (class Semigroup, (<>))
 import Data.Show (class Show)
-import Prelude (class Semigroup, id, ($), (<<<), (>>>))
-
 
 ------------------------------------------------------------
 -- Core library.
@@ -14,84 +13,133 @@ import Prelude (class Semigroup, id, ($), (<<<), (>>>))
 -- | A `String` formatter, like `printf`, but type-safe and composable.
 -- |
 -- | In general, a function that behaves like `printf "%s: %d"` would
--- | will have the type signature `Format r m (String -> Int -> a)`. In
+-- | will have the type signature `Format String r (String -> Int -> r)`. In
 -- | other words, `r` and `a` are always type variables, and as you build
 -- | your formatter the concrete arguments queue up in front of `a`.
 -- |
--- | [See the docs for `Format`](#Format) for a technical explanation.
+-- | Examples:
 
-data Format result m f
-    = Format ((m -> result) -> f)
+-- | ``` purescript
+-- | import Text.Formatting (print, s, string)
+-- |
+-- | -- Build up a `Format`, composing with `<<<`.
+-- | greeting :: Format String (String -> String)
+-- | greeting = s "Hello " <<< string <<< s "!"
+-- |
+-- | -- Convert it to a function with `print`:
+-- | greet :: String -> String
+-- | greet = print greeting
+-- |
+-- | -- Then use it:
+-- | message1 :: String
+-- | message1 = greet "Kris"
+-- | --> message1 == "Hello Kris!"
+-- |
+-- | -- Or more often, use it directly:
+-- | message2 :: String
+-- | message2 = print greeting "Kris"
+-- | --> message2 == "Hello Kris!"
+-- |
+-- | -- Extend it just by composing more onto it:
+-- | inbox :: forall r. Format String r (String -> Int -> r)
+-- | inbox = greeting <<< s " You have " <<< F.int <<< s " new messages."
+-- |
+-- | -- `print` still makes it into function:
+-- | welcome :: String -> Int -> String
+-- | welcome = print inbox
+-- |
+-- | -- Or again, call it in one go:
+-- | message3 :: String
+-- | message3 = print inbox "Kris" 3
+-- | --> message3 == "Hello Kris! You have 3 new messages."
+-- |
+-- | ```
 
-compose ::
-  forall r s f m.
-  (Semigroup m) =>
-  Format r m f
-  -> Format s m r
-  -> Format s m f
-compose (Format f) (Format g) =
-    Format (\callback -> f $ \fValue -> g $ \gValue -> callback $ fValue <> gValue)
+data Format monoid result f
+    = Format ((monoid -> result) -> f)
 
-instance formatBifunctor :: Bifunctor (Format r) where
-  bimap inputF outputF (Format format) =
-    Format (\callback -> outputF (format (inputF >>> callback)))
+composeFormat ::
+  forall r s m f.
+  Semigroup m
+  => Format m r f
+  -> Format m s r
+  -> Format m s f
+composeFormat (Format f) (Format g) =
+  Format (\callback -> f $ \fValue -> g $ \gValue -> callback $ fValue <> gValue)
 
-infix 9 compose as %
+-- | Note to interested readers: `Format` should be a `Semigroupoid` -
+-- | and hence composable with `<<<` for any format of type `forall m r
+-- | f. Semigroupoid m => Format m r f`
+-- |
+-- | However, I don't know how to persuade PureScript of that. Or even
+-- | if it's valid to say, "This is a member of that category,
+-- | provided you meet my extra constraints..."
+-- |
+-- | Nevertheless, for the most common format - the one that yields
+-- | `String`s, it's composable. And that probably all most people
+-- | will care about.
+instance formatSemigroupoid :: Semigroupoid (Format String) where
+  compose = composeFormat
 
-identity :: forall m r. Format r m (m -> r)
-identity = Format id
-
-apply ::
-  forall a r b m.
-  Format r m (a -> b)
-  -> a
-  -> Format r m b
-apply (Format format) value =
-  Format (\callback -> format callback value)
-
+-- | Turns a `Format` into the underlying function it has built up.
+-- | Call this when you're ready to apply all the arguments and generate a `String`.
 print :: forall f r. Format r r f -> f
 print (Format format) = format id
 
-before ::
-  forall r m c b a.
-  (a -> b)
-  -> Format r m (b -> c)
-  -> Format r m (a -> c)
-before f (Format format) =
-  Format (\callback -> (format callback <<< f))
+-- | Apply the first argument of the formatter, without unwrapping it
+-- | to a plain ol' function.
+apply ::
+  forall r m a b.
+  Format m r (a -> b)
+  -> a
+  -> Format m r b
+apply (Format format) value =
+  Format (\callback -> format callback value)
 
-after ::
-  forall r f a b.
-  (a -> b)
-  -> Format r a f
-  -> Format r b f
-after = lmap
-
-que :: forall r a b c. (b -> c) -> Format r a b -> Format r a c
-que = rmap
-
-toFormatter :: forall r m a. (a -> m) -> Format r m (a -> r)
+-- | Turn a function into a `Format`.
+toFormatter :: forall r m a. (a -> m) -> Format m r (a -> r)
 toFormatter f =
   Format (\callback -> callback <<< f)
+
+-- | Modify a `Format` so that this (contravariant) function is called
+-- | on its first argument.
+before ::
+  forall r m a b c.
+  (b -> a)
+  -> Format m r (a -> c)
+  -> Format m r (b -> c)
+before f (Format format) =
+  Format (\callback -> format callback <<< f)
+
+-- | Modify a `Format` so that this function is called on its final result.
+after :: forall r m n f. (m -> n) -> Format m r f -> Format n r f
+after f (Format format) =
+  Format (\callback -> format (callback <<< f))
 
 ------------------------------------------------------------
 -- Formatters.
 ------------------------------------------------------------
 
-show :: forall r a. (Show a) => Format r String (a -> r)
+-- | Accept any `Show`able argument.
+show :: forall r a. Show a => Format String r (a -> r)
 show = Format (\callback value -> callback $ Data.Show.show value)
 
-string :: forall r. Format r String (String -> r)
+-- | Accept a `String`.
+string :: forall r. Format String r (String -> r)
 string = Format (\callback str -> callback str)
 
-int :: forall r. Format r String (Int -> r)
+-- | Accept an `Int`.
+int :: forall r. Format String r (Int -> r)
 int = show
 
-number :: forall r. Format r String (Number -> r)
+-- | Accept a `Number`.
+number :: forall r. Format String r (Number -> r)
 number = show
 
-boolean :: forall r. Format r String (Boolean -> r)
+-- | Accept a `Boolean`.
+boolean :: forall r. Format String r (Boolean -> r)
 boolean = show
 
-s :: forall r. String -> Format r String r
-s str = Format (\callback -> callback str )
+-- | Insert a fixed string.
+s :: forall r. String -> Format String r r
+s str = Format (\callback -> callback str)

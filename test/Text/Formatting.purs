@@ -6,24 +6,27 @@ import Data.String (toUpper)
 import Prelude
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert (equal)
-import Text.Formatting (print, s, string, (%))
+import Text.Formatting (Format, print, s, string)
 import Text.Formatting as F
 
 tests :: forall e. TestSuite e
 tests = do
   suite "Formatting" do
     test "Compose" do
-      let helloWorld = s "Hello " % string % s "!"
-      equal "Hello Kris!" (print helloWorld "Kris")
+      let greeting :: forall r. Format String r (String -> r)
+          greeting = s "Hello " <<< string <<< s "!"
+          inbox :: forall r. Format String r (String -> Int -> r)
+          inbox = greeting <<< s " You have " <<< F.int <<< s " new messages."
+      equal "Hello Kris!" (print greeting "Kris")
     test "Compose - Associativity" do
-      let helloWorld = (s "Hello " % string) % s "!"
-      equal "Hello Kris!" (print helloWorld "Kris")
-    test "Compose - Associativity" do
-      let helloWorld = s "Hello " % (string % s "!")
-      equal "Hello Kris!" (print helloWorld "Kris")
+      let greeting = (s "Hello " <<< string) <<< s "!"
+      equal "Hello Kris!" (print greeting "Kris")
+    test "Chain - Associativity" do
+      let greeting = s "Hello " <<< (string <<< s "!")
+      equal "Hello Kris!" (print greeting "Kris")
     test "Show" do
       equal "5 - 10"
-        (print (F.show % s " - " % F.show) 5 10)
+        (print (F.show <<< s " - " <<< F.show) 5 10)
     test "Int" do
       equal "5"
         (print F.int 5)
@@ -43,7 +46,7 @@ tests = do
       equal "(JUST 10)"
         (print (F.toFormatter (show >>> toUpper)) (Just 10))
     test "apply" do
-      let format = F.int % s " - " % F.boolean
+      let format = F.int <<< s " - " <<< F.boolean
       let partial = F.apply format 3
       equal "3 - false"
         (print partial false)
@@ -52,7 +55,7 @@ tests = do
         "Item (Apples) - £1.89 x 12"
         (print basket (Item "Apples") 1.89 12)
       where
-        basket = F.show % s " - £" % F.number % s " x " % F.int
+        basket = F.show <<< s " - £" <<< F.number <<< s " x " <<< F.int
 
 data Item = Item String
 
