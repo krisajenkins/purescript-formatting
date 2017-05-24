@@ -71,10 +71,10 @@ import Data.Show (class Show)
 -- | will have the type signature `Format String r (String -> Int -> r)`.
 -- | This tells you that:
 -- |
--- | `Format String` - This is a `Format` that will eventually yield a `String`.
--- | `  r` - This keeps the final type of the formatter open.
--- | ` (String -> Int -> r)` - The formatter takes a `String`, then an
--- | `Int`, and is open to further extension.
+-- | * `Format String` - This is a `Format` that will eventually yield a `String`.
+-- | * `  r` - This keeps the final type of the formatter open.
+-- | * ` (String -> Int -> r)` - The formatter takes a `String`, then
+-- | an `Int`, and is open to further extension.
 
 data Format monoid result f
     = Format ((monoid -> result) -> f)
