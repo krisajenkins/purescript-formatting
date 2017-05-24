@@ -16,7 +16,7 @@ import Data.Show (class Show)
 -- | ### Examples:
 -- |
 -- | ``` purescript
--- | import Text.Formatting (print, s, string)
+-- | import Text.Formatting (print, s, string, int)
 -- | ```
 -- |
 -- | Build up a `Format`, composing with `<<<`.
@@ -50,7 +50,7 @@ import Data.Show (class Show)
 -- | `Format`s. Let's extend `greeting` with some more arguments:
 -- | ``` purescript
 -- | inbox :: forall r. Format String r (String -> Int -> r)
--- | inbox = greeting <<< s " You have " <<< F.int <<< s " new messages."
+-- | inbox = greeting <<< s " You have " <<< int <<< s " new messages."
 -- | ```
 -- |
 -- | `print` still makes it into a function:
@@ -68,13 +68,13 @@ import Data.Show (class Show)
 -- |
 -- | ### A Guide To The Types
 -- |
--- | As an example, a function that behaves like `printf "%s: %d"` would
--- | will have the type signature `Format String r (String -> Int -> r)`.
--- | This tells you that:
+-- | As an example, a function that behaves like `printf "%s: %d"`
+-- | will have the type signature `Format String r (String -> Int ->
+-- | r)`.  This tells you that:
 -- |
 -- | * `Format String` - This is a `Format` that will eventually yield a `String`.
--- | * `  r` - This keeps the final type of the formatter open.
--- | * ` (String -> Int -> r)` - The formatter takes a `String`, then
+-- | * `r` - This is there to keep the final argument list of the formatter open.
+-- | * `String -> Int -> r)` - The formatter takes a `String`, then
 -- | an `Int`, and is open to further extension.
 
 data Format monoid result f
@@ -129,8 +129,8 @@ toFormatter f =
 -- |
 -- | ### Example:
 -- | ``` purescript
--- | import Text.Formatting as F
--- | print (F.before length F.int) [1, 2, 3]
+-- | import Text.Formatting (print, before, int)
+-- | print (before length int) [1, 2, 3]
 -- | --> "3"
 -- | ```
 before ::
@@ -144,8 +144,8 @@ before f (Format format) =
 -- | Modify a `Format` so that this function is called on its final result.
 -- | ### Example:
 -- | ``` purescript
--- | import Text.Formatting as F
--- | print (F.after toUpper show) (Just 3)
+-- | import Text.Formatting (print, after, show)
+-- | print (after toUpper show) (Just 3)
 -- | --> "(JUST 3)"
 -- | ```
 after :: forall r m n f. (m -> n) -> Format m r f -> Format n r f
