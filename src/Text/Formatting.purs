@@ -12,16 +12,7 @@ import Data.Show (class Show)
 
 -- | A `String` formatter, like `printf`, but type-safe and composable.
 -- |
--- | As an example, a function that behaves like `printf "%s: %d"` would
--- | will have the type signature `Format String r (String -> Int -> r)`.
--- |
--- | So you build up a function that eventually yields an `r`. That `r`
--- | remains a variable, because you might want to to append other
--- | arguments, but the first part - `Format String` tells you that
--- | when this formatter finally gets used, the whole thing must
--- | eventually yield a `String`.
--- |
--- | ## Examples:
+-- | ### Examples:
 -- |
 -- | ``` purescript
 -- | import Text.Formatting (print, s, string)
@@ -29,7 +20,7 @@ import Data.Show (class Show)
 -- |
 -- | Build up a `Format`, composing with `<<<`.
 -- | ``` purescript
--- | greeting :: Format String (String -> String)
+-- | greeting :: forall r. Format String r (String -> r)
 -- | greeting = s "Hello " <<< string <<< s "!"
 -- | ```
 -- |
@@ -73,6 +64,17 @@ import Data.Show (class Show)
 -- | message3 = print inbox "Kris" 3
 -- | --> message3 == "Hello Kris! You have 3 new messages."
 -- | ```
+-- |
+-- | ### A Guide To The Types
+-- |
+-- | As an example, a function that behaves like `printf "%s: %d"` would
+-- | will have the type signature `Format String r (String -> Int -> r)`.
+-- | This tells you that:
+-- |
+-- | `Format String` - This is a `Format` that will eventually yield a `String`.
+-- | `  r` - This keeps the final type of the formatter open.
+-- | ` (String -> Int -> r)` - The formatter takes a `String`, then an
+-- | `Int`, and is open to further extension.
 
 data Format monoid result f
     = Format ((monoid -> result) -> f)
@@ -124,7 +126,7 @@ toFormatter f =
 -- | Modify a `Format` so that this (contravariant) function is called
 -- | on its first argument.
 -- |
--- | ## Example:
+-- | ### Example:
 -- | ``` purescript
 -- | import Text.Formatting as F
 -- | print (F.before length F.int) [1, 2, 3]
@@ -139,7 +141,7 @@ before f (Format format) =
   Format (\callback -> format callback <<< f)
 
 -- | Modify a `Format` so that this function is called on its final result.
--- | ## Example:
+-- | ### Example:
 -- | ``` purescript
 -- | import Text.Formatting as F
 -- | print (F.after toUpper show) (Just 3)
