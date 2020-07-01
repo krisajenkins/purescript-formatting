@@ -9,7 +9,7 @@ import Test.Unit.Assert (equal)
 import Text.Formatting (Format, print, s, string)
 import Text.Formatting as F
 
-tests :: forall e. TestSuite e
+tests :: TestSuite
 tests = do
   suite "Formatting" do
     test "Compose" do

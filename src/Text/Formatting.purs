@@ -2,7 +2,8 @@ module Text.Formatting where
 
 import Data.Show as Data.Show
 import Control.Semigroupoid (class Semigroupoid)
-import Data.Function (id, ($), (<<<))
+import Data.Function (($), (<<<))
+import Control.Category (identity)
 import Data.Semigroup (class Semigroup, (<>))
 import Data.Show (class Show)
 
@@ -106,7 +107,7 @@ instance formatSemigroupoid :: Semigroupoid (Format String) where
 -- | Call this when you're ready to apply all the arguments and
 -- | generate an `r` (usually a `String`).
 print :: forall f r. Format r r f -> f
-print (Format format) = format id
+print (Format format) = format identity
 
 -- | Apply the first argument of the formatter, without unwrapping it
 -- | to a plain ol' function.
